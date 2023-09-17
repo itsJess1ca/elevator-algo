@@ -11,3 +11,4 @@ Works on a tick basis, with the "buildingManager" class housing all timing and r
 ```shell
 npm run start:demo
 ```
+![image](https://github.com/itsJess1ca/elevator-algo/assets/3669317/c3415400-3b28-4692-b2b3-41dae928fb8c)
