@@ -1,4 +1,4 @@
-import { Building } from "./building";
+import { Building, ElevatorCall } from "./building";
 import { Elevator, ElevatorDirection, ElevatorState } from "./elevator";
 
 describe('Building', () => {
@@ -7,20 +7,46 @@ describe('Building', () => {
     expect(building['elevators'].length).toEqual(4);
   });
 
-  it('should find the best elevator', () => {
+  const elevatorScenarios: { call: ElevatorCall, elevators: Elevator[], best: Elevator}[] = [
+    // Get elevator already stopped on our floor
+    {
+      elevators: [
+        new Elevator(6, ElevatorDirection.DOWN, ElevatorState.MOVING),
+        new Elevator(6, ElevatorDirection.UP, ElevatorState.STOPPED),
+        new Elevator(3, ElevatorDirection.UP, ElevatorState.MOVING, new Set([4])),
+        new Elevator(3, ElevatorDirection.DOWN, ElevatorState.STOPPED)
+      ],
+      call: {floor: 3, direction: ElevatorDirection.DOWN},
+      best: new Elevator(3, ElevatorDirection.DOWN, ElevatorState.STOPPED)
+    },
+    // Get elevator that is moving down towards us
+    {
+      elevators: [
+        new Elevator(6, ElevatorDirection.DOWN, ElevatorState.MOVING),
+        new Elevator(6, ElevatorDirection.UP, ElevatorState.STOPPED),
+        new Elevator(3, ElevatorDirection.UP, ElevatorState.MOVING, new Set([4])),
+        new Elevator(3, ElevatorDirection.DOWN, ElevatorState.STOPPED)
+      ],
+      call: {floor: 5, direction: ElevatorDirection.UP},
+      best: new Elevator(6, ElevatorDirection.DOWN, ElevatorState.MOVING)
+    },
+    // Make sure target direction is taken into account
+    {
+      elevators: [
+        new Elevator(2, ElevatorDirection.DOWN, ElevatorState.MOVING, new Set([0])),
+        new Elevator(0, ElevatorDirection.UP, ElevatorState.MOVING, new Set([2]))
+      ],
+      call: {floor: 1, direction: ElevatorDirection.UP},
+      best: new Elevator(0, ElevatorDirection.UP, ElevatorState.MOVING, new Set([2]))
+    }
+  ]
+  it.each(elevatorScenarios)('should find the best elevator', ({call, elevators, best}) => {
     const building = new Building(5, 3);
-    building['elevators'] = [
-      new Elevator(6, ElevatorDirection.DOWN, ElevatorState.MOVING),
-      new Elevator(6, ElevatorDirection.UP, ElevatorState.STOPPED),
-      new Elevator(3, ElevatorDirection.UP, ElevatorState.MOVING, new Set([4])),
-      new Elevator(3, ElevatorDirection.DOWN, ElevatorState.STOPPED)
-    ];
+    building['elevators'] = elevators;
 
-    let bestElevator = building['findBestElevator'](5, ElevatorDirection.UP);
-    expect(bestElevator).toEqual(building['elevators'][0]);
-
-    bestElevator = building['findBestElevator'](3, ElevatorDirection.DOWN);
-    expect(bestElevator).toEqual(building['elevators'][3]);
-
+    let bestElevator = building['findBestElevator'](call.floor, call.direction);
+    expect(bestElevator).toMatchObject(best);
   })
+
+  it('should emit elevator_state event ')
 })

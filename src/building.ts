@@ -1,15 +1,28 @@
 import { Elevator, ElevatorDirection, ElevatorState } from "./elevator";
-import { difference } from "./utils";
+import { EventEmitter } from 'node:events';
 
 export type ElevatorCall = {
   floor: number;
   direction: ElevatorDirection;
 }
 
+export enum ElevatorEvents {
+  ELEVATOR_STATE = 'elevator_state'
+}
+export interface ElevatorEventPayloads {
+  elevator_state: {
+    id: number;
+    floor: number;
+    state: ElevatorState;
+    direction: ElevatorDirection;
+  }
+}
+
 export class Building {
-  private elevators: Elevator[] = [];
-  private pendingCalls: ElevatorCall[] = [];
-  private plannedCalls: ElevatorCall[] = [];
+  public elevators: Elevator[] = [];
+  public pendingCalls: ElevatorCall[] = [];
+  public plannedCalls: ElevatorCall[] = [];
+  private event$ = new EventEmitter();
   constructor(public floors: number, public elevatorCount: number) {
     for (let i = 0; i < elevatorCount; i++) {
       this.elevators.push(new Elevator());
@@ -47,9 +60,20 @@ export class Building {
     return bestElevator;
   }
 
+  listen<T extends ElevatorEvents>(eventName: T, callback: (payload: ElevatorEventPayloads[T]) => void) {
+    console.log(`Adding listener for ${eventName}`);
+    return this.event$.on(eventName, callback);
+  }
+
   __tick() {
     for (const elevator of this.elevators) {
       elevator.__tick();
+      this.event$.emit(ElevatorEvents.ELEVATOR_STATE, {
+        id: this.elevators.indexOf(elevator),
+        floor: elevator.currentFloor,
+        state: elevator.state,
+        direction: elevator.direction
+      })
     }
 
     let pendingCall: ElevatorCall | undefined = this.pendingCalls.shift();
@@ -57,5 +81,8 @@ export class Building {
       this.callElevator(pendingCall.floor, pendingCall.direction);
       pendingCall = this.pendingCalls.shift();
     }
+
+    this.plannedCalls = this.plannedCalls.filter((c) =>
+      !this.elevators.find(e => e.currentFloor === c.floor && e.state === ElevatorState.STOPPED))
   }
 }
