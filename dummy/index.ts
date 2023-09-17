@@ -5,6 +5,7 @@ import { randomBetween } from "../src/utils";
 import { faker } from "@faker-js/faker";
 
 let timeStart = Date.now();
+const chanceForCall = 0.5;
 async function start() {
   const mgr = new BuildingManager();
   mgr.addBuilding(10, 3);
@@ -14,9 +15,9 @@ async function start() {
 
   setInterval(() => {
     mgr.renderState(building);
-    console.log(`Time since start: ${(Date.now() - timeStart) / 1000}s`);
+    // console.log(`Time since start: ${(Date.now() - timeStart) / 1000}s`);
 
-    if (Math.random() < 0.20) {
+    if (Math.random() < chanceForCall) {
       const floor = randomBetween(0, building.floors);
       let availableDirections: ElevatorDirection[] = [];
       if (floor > 0) {
